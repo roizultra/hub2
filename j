@@ -160,6 +160,7 @@ local function collectFruit(plants, validNames)
         while i <= #fruits and not feededFull do
             local fruit = fruits[i]
             if fruit then
+                if feededFull then break end
                 game:GetService("ReplicatedStorage")
                     :WaitForChild("GameEvents")
                     :WaitForChild("Crops")
