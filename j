@@ -157,26 +157,31 @@ local function collectFruit(plants, validNames)
 
         local fruits = fruitsFolder:GetChildren()
         local i = 1
-        while i <= #fruits and not feededFull do
+
+        while not feededFull do
             local fruit = fruits[i]
-            if fruit then
-                if feededFull then return end
-                game:GetService("ReplicatedStorage")
-                    :WaitForChild("GameEvents")
-                    :WaitForChild("Crops")
-                    :WaitForChild("Collect")
-                    :FireServer({ fruit })
-
-                task.wait(0.05)
-
-                game:GetService("ReplicatedStorage")
-                    :WaitForChild("GameEvents")
-                    :WaitForChild("FallMarketEvent")
-                    :WaitForChild("SubmitAllPlants")
-                    :FireServer()
+            if not fruit then
+                break -- no more fruits, stop searching
             end
+
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("Crops")
+                :WaitForChild("Collect")
+                :FireServer({ fruit })
+
+            task.wait(0.05)
+
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("FallMarketEvent")
+                :WaitForChild("SubmitAllPlants")
+                :FireServer()
+
             i = i + 1
+            break -- exit after handling one fruit
         end
+
     end
 end
 
