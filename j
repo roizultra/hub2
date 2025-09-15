@@ -47,7 +47,7 @@ local function checkWhitelist()
     
     if data.whitelisted then
         
-local library = loadstring(game:HttpGet("https://pastebin.com/raw/6mVVnMh8"))()
+local library = loadstring(game:HttpGet("https://pastebin.com/raw/bCvsCwmL"))()
 local redarkGui = library.new(Redark, 16746423793)
 
 task.spawn(function()
@@ -59,11 +59,16 @@ task.spawn(function()
 CoreGui[Redark].Main.Visible = true
 end)
 
+pcall(function()
+redarkGui:Notify("Welcome to Sunflower Hub, ".. LocalPlayer.DisplayName, "Press B or floating icon to toggle the UI.")
+CoreGui[Redark].Notification.Decline:Destroy()
+end)
+
 -- Tables
 local seeds = {
     "Strawberry","Watermelon","Pumpkin","Blueberry","Orange Tulip","Cactus","Bamboo","Daffodil",
     "Tomato","Apple","Coconut","Dragon Fruit","Mango","Grape","Mushroom","Pepper","Cacao","Beanstalk",
-    "Ember Lily","Sugar Apple","Burning Bud","Romanesco","Elder Strawberry","Giant Pinecone","Carrot"
+    "Ember Lily","Sugar Apple","Burning Bud","Romanesco","Elder Strawberry","Giant Pinecone","Carrot","Corn"
 }
 
 local gears = { "Watering Can","Trading Ticket","Trowel","Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler", "Medium Toy", "Medium Treat", "Godly Sprinkler", "Magnifying Glass", "Master Sprinkler", "Cleaning Spray", "Cleansing Pet Shard", "Favorite Tool", "Harvest Tool", "Grandmaster Sprinkler", "Levelup Lollipop" }
@@ -72,15 +77,32 @@ local eggs = { "Common Egg","Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythic
 
 
 -- Local
-local page = redarkGui:addPage("Local", 10686489468)
+local page = redarkGui:addPage("Inventory", 11330204834)
 
 local section1 = page:addSection("Shop")
 
-section1:addButton("Placeholder", function()
-
+section1:addButton("Sell Inventory", function()
+    task.spawn(function()
+            redarkGui:Notify("Selling...", "Are you sure you want to sell your inventory?", function(accepted)
+            if accepted then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(87, 3, 0)
+            task.wait(.7)
+            ReplicatedStorage.GameEvents.Sell_Inventory:FireServer()
+            redarkGui:Notify("Selling...", "Inventory sold!")
+            CoreGui[Redark].Notification.Decline.Visible = false
+            CoreGui[Redark].Notification.Accept:Destroy()
+            task.wait(1)
+                if CoreGui[Redark].Notification.Text.Text == "Inventory sold!" then
+                    for _, Value in next, getconnections(CoreGui[Redark].Notification.Decline.MouseButton1Click) do
+                        Value:Fire()
+                    end
+                end
+            end
+        end)
+    end)
 end)
 
-section1:addToggle("Buy Everything", nil, function(value)
+section1:addToggle("Buy Seeds/Gears", nil, function(value)
     if value then
         task.spawn(function()
             while value do
@@ -105,30 +127,6 @@ section1:addToggle("Buy Everything", nil, function(value)
     end
 end)
 
-
-local section2 = page:addSection("Seeds")
-
-section2:addDropdown("Placeholder", Placeholder, function(value)
-    
-end)
-
-section2:addDropdown("Select Age:", {"Placeholder", "Placeholder", "Placeholder"}, function(value)
-
-end)
-
-section2:addTextbox("Percentage", "100", function(value, focusLost)
-    if focusLost then
-       
-    end
-end)
-
-local section4 = page:addSection("Placeholder")
-section4:addTextbox("Placeholder:", "", function(value, focusLost)
-if focusLost then
-    getgenv().selectedSkin = value
-end
-end)
-
 local autoFeedActive = false
 local feededFull = false
 local lastTraitText = nil
@@ -136,56 +134,9 @@ local lastTraitText = nil
 -- Misc
 local page = redarkGui:addPage("Event", 12778274392)
 
-local section1 = page:addSection("Automation")
-local function collectFruit(plants, validNames)
-    if feededFull then return end
+local section1 = page:addSection("")
 
-    for _, plant in ipairs(plants:GetChildren()) do
-        if not table.find(validNames, plant.Name) or not plant:IsA("Model") then
-            continue
-        end
-
-        local prompt = plant:FindFirstChildWhichIsA("ProximityPrompt", true)
-        if not prompt or not autoFeedActive then
-            continue
-        end
-
-        local fruitsFolder = plant:FindFirstChild("Fruits")
-        if not fruitsFolder then
-            continue
-        end
-
-        local fruits = fruitsFolder:GetChildren()
-        local i = 1
-
-        while not feededFull do
-            local fruit = fruits[i]
-            if not fruit then
-                break -- no more fruits, stop searching
-            end
-
-            game:GetService("ReplicatedStorage")
-                :WaitForChild("GameEvents")
-                :WaitForChild("Crops")
-                :WaitForChild("Collect")
-                :FireServer({ fruit })
-
-            task.wait(0.05)
-
-            game:GetService("ReplicatedStorage")
-                :WaitForChild("GameEvents")
-                :WaitForChild("FallMarketEvent")
-                :WaitForChild("SubmitAllPlants")
-                :FireServer()
-
-            i = i + 1
-            break -- exit after handling one fruit
-        end
-
-    end
-end
-
-section1:addToggle("Auto Feed", nil, function(state)
+section1:addToggle("Auto Feed Tree", nil, function(state)
     autoFeedActive = state
     if state then
         task.spawn(function()
@@ -210,20 +161,56 @@ section1:addToggle("Auto Feed", nil, function(state)
                                 end
 
                                 if not feededFull then
+                                    local validNames = {}
+
                                     if traitText:find("Tropical") then
-                                        collectFruit(plants, {"Coconut", "Mango", "Dragon Fruit"})
+                                        validNames = {"Coconut", "Mango", "Dragon Fruit"}
                                     elseif traitText:find("Berry") then
-                                        collectFruit(plants, {"Strawberry", "Blueberry", "Sunbulb"})
+                                        validNames = {"Strawberry", "Blueberry", "Sunbulb"}
                                     elseif traitText:find("Fruit") then
-                                        collectFruit(plants, {"Apple", "Coconut", "Mango", "Strawberry", "Blueberry"})
+                                        validNames = {"Apple", "Coconut", "Mango", "Strawberry", "Blueberry"}
                                     elseif traitText:find("Prickly") then
-                                        collectFruit(plants, {"Glowthorn", "Dragon Fruit", "Cactus"})
+                                        validNames = {"Glowthorn", "Dragon Fruit", "Cactus"}
                                     elseif traitText:find("Woody") then
-                                        collectFruit(plants, {"Coconut", "Apple"})
+                                        validNames = {"Coconut", "Apple", "Mango"}
                                     elseif traitText:find("Flower") then
-                                        collectFruit(plants, {"Crown of Thorns", "Flare Daisy", "Rose"})
+                                        validNames = {"Crown of Thorns", "Flare Daisy", "Rose"}
                                     elseif traitText:find("Vegetable") then
-                                        collectFruit(plants, {"Tomato"})
+                                        validNames = {"Tomato"}
+                                    end
+
+                                    for _, plant in ipairs(plants:GetChildren()) do
+                                        if not table.find(validNames, plant.Name) or not plant:IsA("Model") then
+                                            continue
+                                        end
+
+                                        local prompt = plant:FindFirstChildWhichIsA("ProximityPrompt", true)
+                                        if not prompt or not autoFeedActive then
+                                            continue
+                                        end
+
+                                        local fruitsFolder = plant:FindFirstChild("Fruits")
+                                        if not fruitsFolder then
+                                            continue
+                                        end
+
+                                        local fruits = fruitsFolder:GetChildren()
+                                        if #fruits > 0 then
+                                            local randomIndex = math.random(1, #fruits)
+                                            local fruit = fruits[randomIndex]
+
+                                            game:GetService("ReplicatedStorage")
+                                                :WaitForChild("GameEvents")
+                                                :WaitForChild("Crops")
+                                                :WaitForChild("Collect")
+                                                :FireServer({ fruit })
+                                            game:GetService("ReplicatedStorage")
+                                                :WaitForChild("GameEvents")
+                                                :WaitForChild("FallMarketEvent")
+                                                :WaitForChild("SubmitAllPlants")
+                                                :FireServer()
+                                            task.wait(0.02)
+                                        end
                                     end
                                 end
                             end
@@ -232,7 +219,7 @@ section1:addToggle("Auto Feed", nil, function(state)
                 else
                     feededFull = true
                 end
-                task.wait(0.1)
+                task.wait(0.02)
             end
         end)
     else
@@ -240,8 +227,7 @@ section1:addToggle("Auto Feed", nil, function(state)
     end
 end)
 
-
-section1:addToggle("Auto Buy", nil, function(state)
+section1:addToggle("Auto Buy All", nil, function(state)
     if state then
      task.spawn(function()
             while state do
@@ -250,14 +236,23 @@ section1:addToggle("Auto Buy", nil, function(state)
                             {"Maple Resin", 1},
                             {"Golden Peach", 1},
                             {"Kniphofia", 1},
-                            {"Maple Sprinkler", 2},
+                            {"Turnip", 1},
+                            {"Parsley", 1},
+                            {"Meyer Lemon", 1},
+                            {"Carnival Pumpkin", 1},
+                            {"Firefly Jar", 2},
+                            {"Sky Lantern", 2},
+                            {"Maple Leaf Kite", 2},
+                            {"Leaf Blower", 2},
                             {"Maple Syrup", 2},
+                            {"Maple Sprinkler", 2},
+                            {"Bonfire", 2},
                             {"Harvest Basket", 2},
+                            {"Maple Leaf Charm", 2},
+                            {"Golden Acorn", 2},
                             {"Fall Egg", 3},
                             {"Space Squirrel", 3},
                             {"Sugar Glider", 3},
-                            {"Golden Acorn", 2},
-                            {"Fall Fountain", 4},
                             {"Fall Crate", 4}
 
                         }
@@ -273,334 +268,339 @@ section1:addToggle("Auto Buy", nil, function(state)
     end
 end)
 
+local section3 = page:addSection("Pets")
 
-
-
-local page = redarkGui:addPage("Players", 0)
-
-
-local section1 = page:addSection("Select Player")
-local players = {}
-
-task.spawn(function()
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            table.insert(players, player.Name)
-        end
-    end
-end)
-
-local dropdown = section1:addDropdown("Players", players, function(playerName)
-    local player = Players:FindFirstChild(playerName)
-    getgenv().PName = playerName
-end)
-
-task.spawn(function()
-        Players.PlayerRemoving:Connect(function(player)
-        for i, playerName in ipairs(players) do
-            if playerName == player.Name then
-                table.remove(players, i)
-                break
-            end
-        end
-        dropdown:updateDropdown("Players", players, function(playerName)
-            local player = game.Players:FindFirstChild(playerName)
+section3:addToggle("Fall Egg", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Fall Egg", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Fall Egg", 3)
         end)
-    end)
-
-    Players.PlayerAdded:Connect(function(player)
-        if player ~= LocalPlayer then
-            table.insert(players, player.Name)
-            dropdown:updateDropdown("Players", players, function(playerName)
-                local player = Players:FindFirstChild(playerName)
-                if player then
-                    workspace.Camera.CameraSubject = player.Character
-                end
-            end)
-        end
-    end)
-end)
-
-section1:addToggle("View Player", nil, function(value)
-    if value then
-            RunService:BindToRenderStep("Viewing Player", Enum.RenderPriority.Camera.Value,function()
-                local player = game.Players:FindFirstChild(getgenv().PName)
-            if player then
-                workspace.Camera.CameraSubject = player.Character
-            else
-                workspace.Camera.CameraSubject = game.Players.LocalPlayer.Character
-            end
-                end)
     else
-    RunService:UnbindFromRenderStep("Viewing Player")
-    workspace.Camera.CameraSubject = game.Players.LocalPlayer.Character
+        RunService:UnbindFromRenderStep("Fall Egg")
     end
 end)
 
-local section3 = page:addSection("Teleports")
-getgenv().gotodist = 5
-getgenv().gotorandomdelay = 3
-
-section3:addButton("Go To", function()
-    local target = game.Players:FindFirstChild(getgenv().PName)
-        if target then
-            local targetHRP = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
-            local localHRP = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if targetHRP and localHRP then
-                local distance = getgenv().gotodist
-                local direction = targetHRP.CFrame.lookVector
-                local behindPosition = targetHRP.Position - distance * direction
-                localHRP.CFrame = CFrame.new(behindPosition, targetHRP.Position)
-            end
-        end
-end)
-
-local function moveTowardsTarget()
-    local part1, part2
-    
-    local target = game.Players:FindFirstChild(getgenv().PName)
-    if target then
-        local targetHRP = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
-        local localHRP = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-
-        if targetHRP and localHRP then
-            local distance = getgenv().gotodist
-            local direction = targetHRP.CFrame.lookVector
-            local behindPosition = targetHRP.Position - distance * direction
-            if getgenv().gotoabove then
-                local humanoid = game.Players.LocalPlayer.Character.Humanoid
-                humanoid.PlatformStand = getgenv().gotoabove
-                localHRP.CFrame = CFrame.new(targetHRP.Position + Vector3.new(0, distance, 0))
-                localHRP.CFrame = CFrame.new(localHRP.Position, targetHRP.Position)
-                if not part1 or not part2 then
-                    part1 = Instance.new("Part", workspace)
-                    part1.Anchored = true
-                    part1.Size = Vector3.new(10, .001, 10)
-                    part1.Transparency = 1
-
-                    part2 = Instance.new("Part", workspace)
-                    part2.Anchored = true
-                    part2.Size = Vector3.new(10, .001, 10)
-                    part2.Transparency = 1
-                end
-                part1.CFrame = CFrame.new(targetHRP.Position + Vector3.new(0, distance, 0))
-                part2.CFrame = CFrame.new(targetHRP.Position - Vector3.new(0, distance, 0))
-            elseif getgenv().gotobelow then
-                local humanoid = game.Players.LocalPlayer.Character.Humanoid
-                humanoid.PlatformStand = getgenv().gotobelow
-                localHRP.CFrame = CFrame.new(targetHRP.Position - Vector3.new(0, distance, 0))
-                localHRP.CFrame = CFrame.new(localHRP.Position, targetHRP.Position)
-                if not part1 or not part2 then
-                    part1 = Instance.new("Part", workspace)
-                    part1.Anchored = true
-                    part1.Size = Vector3.new(10, .001, 10)
-                    part1.Transparency = 1
-
-                    part2 = Instance.new("Part", workspace)
-                    part2.Anchored = true
-                    part2.Size = Vector3.new(10, .001, 10)
-                    part2.Transparency = 1
-                end
-                part1.CFrame = CFrame.new(localHRP.Position - Vector3.new(0, 0.5, 0))
-                part2.CFrame = CFrame.new(localHRP.Position + Vector3.new(0, 0.5, 0))
-            else
-                if part1 and part2 then
-                    part1:Destroy()
-                    part2:Destroy()
-                    part1, part2 = nil, nil
-                end
-                local humanoid = game.Players.LocalPlayer.Character.Humanoid
-                humanoid.PlatformStand = false
-                localHRP.CFrame = CFrame.new(behindPosition, targetHRP.Position)
-            end
-        end
-    end
-end
-
-local Loop
-
-section3:addToggle("Loop Go To", nil, function(value)
+section3:addToggle("Chipmunk", nil, function(value)
     if value then
-        Loop = game:GetService("RunService").RenderStepped:Connect(moveTowardsTarget)
+        RunService:BindToRenderStep("Chipmunk", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Chipmunk", 3)
+        end)
     else
-        Loop:Disconnect()
+        RunService:UnbindFromRenderStep("Chipmunk")
     end
 end)
 
-
-section3:addSlider("Distance", getgenv().gotodist, 3, 100, function(value) 
-    getgenv().gotodist = value
-end)
-
-section3:addToggle("Above", nil, function(value)
-    getgenv().gotoabove = value
-end)
-
-section3:addToggle("Below", nil, function(value)
-    getgenv().gotobelow = value
-end)
-
-section3:addToggle("Loop Go To Random", nil, function(value)
-    getgenv().gotorandom = value
+section3:addToggle("Red Squirrel", nil, function(value)
     if value then
-        goToRandomPlayer()
-    end
-end)
-
-section3:addSlider("Delay", getgenv().gotorandomdelay, 1, 30, function(value) 
-    getgenv().gotorandomdelay = value
-end)
-
--- Local
-local page = redarkGui:addPage("DNA", 16798955678)
-
-pcall(function()
-redarkGui:Notify("Welcome to Redark, ".. LocalPlayer.DisplayName, "Press B or floating icon to toggle the UI.")
-CoreGui[Redark].Notification.Decline:Destroy()
-end)
-
-local page = redarkGui:addPage("ESP", 10686484299)
-
-local section1 = page:addSection("Name | Health | Studs")
-getgenv().NDrawing = nil
-
-getgenv().espSettings = {
-    Size = 14,
-    Position = 4,
-};
-
-section1:addToggle("ESP", nil, function(value)
-    getgenv().Visible = value
-    if value then
-        if getgenv().NDrawing == true then
-            return
-        end
-        getgenv().NDrawing = true
-
-        local camera = workspace.CurrentCamera
-        local players = game:GetService("Players")
-        local localPlayer = players.LocalPlayer
-        local runService = game:GetService("RunService")
-
-        local function esp(player, character)
-            local humanoid = character:WaitForChild("Dinosaur")
-            local head = character:WaitForChild("Head")
-
-            local text = Drawing.new("Text")
-            text.Visible = getgenv().Visible
-            text.Center = true
-            text.Outline = true
-            text.Font = 2
-            text.Color = getgenv().Color
-            text.Size = getgenv().espSettings.Size
-
-            local connectionAncestryChanged
-            local connectionHealthChanged
-            local connectionRenderStepped
-
-            local function cleanup()
-                text.Visible = false
-                text:Remove()
-                if connectionAncestryChanged then
-                    connectionAncestryChanged:Disconnect()
-                    connectionAncestryChanged = nil
-                end
-                if connectionHealthChanged then
-                    connectionHealthChanged:Disconnect()
-                    connectionHealthChanged = nil
-                end
-                if connectionRenderStepped then
-                    connectionRenderStepped:Disconnect()
-                    connectionRenderStepped = nil
-                end
-            end
-
-            connectionAncestryChanged = character.AncestryChanged:Connect(function(_, parent)
-                if not parent then
-                    cleanup()
-                end
-            end)
-
-            connectionHealthChanged = humanoid.HealthChanged:Connect(function()
-                if humanoid.Health <= 0 or humanoid:GetState() == Enum.HumanoidStateType.Dead then
-                    cleanup()
-                end
-            end)
-
-            connectionRenderStepped = runService.RenderStepped:Connect(function()
-                local hrpPosition, hrpOnScreen = camera:WorldToViewportPoint(head.Position)
-                if hrpOnScreen then
-                    local headPosition = camera:WorldToViewportPoint(head.Position + Vector3.new(0, getgenv().espSettings.Position, 0))
-                    local distance = tostring(math.floor((localPlayer.Character.HumanoidRootPart.Position - head.Position).magnitude)) 
-                    local health = tostring(math.floor(humanoid.Health)) .. "/" .. tostring(math.floor(humanoid.MaxHealth))
-                    text.Position = Vector2.new(headPosition.X, headPosition.Y)
-                    text.Text = player.Name .. " | " .. player[player.UserId].CurrentDino.Value .. "\n" .. health .. " | " .. distance
-
-                    text.Visible = getgenv().Visible
-                    text.Size = getgenv().espSettings.Size
-                    text.Color = getgenv().Color
-                else
-                    text.Visible = false
-                end
-            end)
-        end
-
-        local function onPlayerAdded(player)
-            if player.Character then
-                esp(player, player.Character)
-            end
-            player.CharacterAdded:Connect(function(character)
-                esp(player, character)
-            end)
-        end
-
-        for _, player in ipairs(players:GetPlayers()) do
-            if player ~= localPlayer then
-                onPlayerAdded(player)
-            end
-        end
-
-        players.PlayerAdded:Connect(onPlayerAdded)
-
+        RunService:BindToRenderStep("Red Squirrel", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Red Squirrel", 3)
+        end)
     else
-        local function cleanupAll()
-            for _, player in ipairs(players:GetPlayers()) do
-                local character = player.Character
-                if character then
-                    local text = character:FindFirstChild("ESP")
-                    if text then
-                        text.Visible = false
-                        text:Remove()
-                    end
-                end
-            end
-        end
-        cleanupAll()
+        RunService:UnbindFromRenderStep("Red Squirrel")
+    end
+end)
+
+section3:addToggle("Marmot", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Marmot", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Marmot", 3)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Marmot")
+    end
+end)
+
+section3:addToggle("Sugar Glider", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Sugar Glider", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Sugar Glider", 3)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Sugar Glider")
+    end
+end)
+
+section3:addToggle("Space Squirrel", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Space Squirrel", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Space Squirrel", 3)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Space Squirrel")
+    end
+end)
+
+local section4 = page:addSection("Seeds")
+
+section4:addToggle("Turnip", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Turnip", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Turnip", 1)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Turnip")
+    end
+end)
+
+section4:addToggle("Parsley", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Parsley", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Parsley", 1)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Parsley")
+    end
+end)
+
+section4:addToggle("Meyer Lemon", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Meyer Lemon", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Meyer Lemon", 1)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Meyer Lemon")
+    end
+end)
+
+section4:addToggle("Carnival Pumpkin", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Carnival Pumpkin", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Carnival Pumpkin", 1)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Carnival Pumpkin")
+    end
+end)
+
+section4:addToggle("Kniphofia", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Kniphofia", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Kniphofia", 1)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Kniphofia")
+    end
+end)
+
+section4:addToggle("Golden Peach", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Golden Peach", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Golden Peach", 1)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Golden Peach")
+    end
+end)
+
+section4:addToggle("Maple Resin", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Maple Resin", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Maple Resin", 1)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Maple Resin")
+    end
+end)
+
+local section5 = page:addSection("Gears")
+
+section5:addToggle("Firefly Jar", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Firefly Jar", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Firefly Jar", 2)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Firefly Jar")
+    end
+end)
+
+section5:addToggle("Sky Lantern", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Sky Lantern", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Sky Lantern", 2)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Sky Lantern")
+    end
+end)
+
+section5:addToggle("Maple Leaf Kite", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Maple Leaf Kite", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Maple Leaf Kite", 2)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Maple Leaf Kite")
+    end
+end)
+
+section5:addToggle("Leaf Blower", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Leaf Blower", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Leaf Blower", 2)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Leaf Blower")
+    end
+end)
+
+section5:addToggle("Maple Syrup", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Maple Syrup", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Maple Syrup", 2)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Maple Syrup")
     end
 end)
 
 
-getgenv().Color = Color3.fromRGB(0,0,255)
-
-section1:addColorPicker("Text Color", getgenv().Color, function(color, update)
-    
-    task.spawn(function()
-            getgenv().Color = color
-            update(color)
-    end)
+section5:addToggle("Maple Sprinkler", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Maple Sprinkler", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Maple Sprinkler", 2)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Maple Sprinkler")
+    end
 end)
 
-section1:addSlider("Text Size", getgenv().espSettings.Size, 13, 30, function(value)
-    task.spawn(function ()
-    getgenv().espSettings.Size = value
-    end)
+section5:addToggle("Bonfire", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Bonfire", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Bonfire", 2)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Bonfire")
+    end
 end)
 
-section1:addSlider("Text Position", getgenv().espSettings.Position, -5, 8, function(value)
-    task.spawn(function ()
-        getgenv().espSettings.Position = value
-    end)
-end)    
+section5:addToggle("Harvest Basket", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Harvest Basket", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Harvest Basket", 2)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Harvest Basket")
+    end
+end)
+
+section5:addToggle("Maple Leaf Charm", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Maple Leaf Charm", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Maple Leaf Charm", 2)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Maple Leaf Charm")
+    end
+end)
+
+section5:addToggle("Golden Acorn", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Golden Acorn", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Golden Acorn", 2)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Golden Acorn")
+    end
+end)
+
+local section6 = page:addSection("Cosmetics")
+
+section6:addToggle("Fall Crate", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Fall Crate", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Fall Crate", 4)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Fall Crate")
+    end
+end)
+
+section6:addToggle("Fall Fountain", nil, function(value)
+    if value then
+        RunService:BindToRenderStep("Fall Fountain", Enum.RenderPriority.Last.Value, function()
+            game:GetService("ReplicatedStorage")
+                :WaitForChild("GameEvents")
+                :WaitForChild("BuyEventShopStock")
+                :FireServer("Fall Fountain", 4)
+        end)
+    else
+        RunService:UnbindFromRenderStep("Fall Fountain")
+    end
+end)
 
 -- Settings
 local page = redarkGui:addPage("Settings", 11385265073)
@@ -612,162 +612,6 @@ local productInfo = MarketplaceService:GetProductInfo(placeId)
 local placeName = productInfo.Name
 
 local section1 = page:addSection("Graphics")
-
-section1:addToggle("No Fog", nil, function(value)
-    if value then
-        task.spawn(function()
-            game:GetService("Lighting").FogEnd = 1000000
-            for _, v in ipairs(game.Lighting:GetDescendants()) do
-                if v:IsA("Atmosphere") then
-                    v:Destroy()
-                end
-            end
-        end)
-    else
-    local atmosphere = Instance.new("Atmosphere")
-        atmosphere.Name = "Atmosphere"
-        atmosphere.Color = Color3.new(0.5, 0.5, 0.5)
-        atmosphere.Density = 0.3
-        atmosphere.Offset = 0
-        atmosphere.Parent = game.Lighting
-        game:GetService("Lighting").FogEnd = 100000
-    end
-end)
-
-section1:addToggle("Full Bright", nil, function(value)
-    if not _G.FullBrightExecuted then
-
-    _G.FullBrightEnabled = false
-
-    _G.NormalLightingSettings = {
-        Brightness = game:GetService("Lighting").Brightness,
-        ClockTime = game:GetService("Lighting").ClockTime,
-        FogEnd = game:GetService("Lighting").FogEnd,
-        GlobalShadows = game:GetService("Lighting").GlobalShadows,
-        Ambient = game:GetService("Lighting").Ambient
-    }
-
-    game:GetService("Lighting"):GetPropertyChangedSignal("Brightness"):Connect(function()
-        if game:GetService("Lighting").Brightness ~= 1 and game:GetService("Lighting").Brightness ~= _G.NormalLightingSettings.Brightness then
-            _G.NormalLightingSettings.Brightness = game:GetService("Lighting").Brightness
-            if not _G.FullBrightEnabled then
-                repeat
-                    wait()
-                until _G.FullBrightEnabled
-            end
-            game:GetService("Lighting").Brightness = 1
-        end
-    end)
-
-    game:GetService("Lighting"):GetPropertyChangedSignal("ClockTime"):Connect(function()
-        if game:GetService("Lighting").ClockTime ~= 12 and game:GetService("Lighting").ClockTime ~= _G.NormalLightingSettings.ClockTime then
-            _G.NormalLightingSettings.ClockTime = game:GetService("Lighting").ClockTime
-            if not _G.FullBrightEnabled then
-                repeat
-                    wait()
-                until _G.FullBrightEnabled
-            end
-            game:GetService("Lighting").ClockTime = 12
-        end
-    end)
-
-    game:GetService("Lighting"):GetPropertyChangedSignal("FogEnd"):Connect(function()
-        if game:GetService("Lighting").FogEnd ~= 786543 and game:GetService("Lighting").FogEnd ~= _G.NormalLightingSettings.FogEnd then
-            _G.NormalLightingSettings.FogEnd = game:GetService("Lighting").FogEnd
-            if not _G.FullBrightEnabled then
-                repeat
-                    wait()
-                until _G.FullBrightEnabled
-            end
-            game:GetService("Lighting").FogEnd = 786543
-        end
-    end)
-
-    game:GetService("Lighting"):GetPropertyChangedSignal("GlobalShadows"):Connect(function()
-        if game:GetService("Lighting").GlobalShadows ~= false and game:GetService("Lighting").GlobalShadows ~= _G.NormalLightingSettings.GlobalShadows then
-            _G.NormalLightingSettings.GlobalShadows = game:GetService("Lighting").GlobalShadows
-            if not _G.FullBrightEnabled then
-                repeat
-                    wait()
-                until _G.FullBrightEnabled
-            end
-            game:GetService("Lighting").GlobalShadows = false
-        end
-    end)
-
-    game:GetService("Lighting"):GetPropertyChangedSignal("Ambient"):Connect(function()
-        if game:GetService("Lighting").Ambient ~= Color3.fromRGB(178, 178, 178) and game:GetService("Lighting").Ambient ~= _G.NormalLightingSettings.Ambient then
-            _G.NormalLightingSettings.Ambient = game:GetService("Lighting").Ambient
-            if not _G.FullBrightEnabled then
-                repeat
-                    wait()
-                until _G.FullBrightEnabled
-            end
-            game:GetService("Lighting").Ambient = Color3.fromRGB(178, 178, 178)
-        end
-    end)
-
-    game:GetService("Lighting").Brightness = 1
-    game:GetService("Lighting").ClockTime = 12
-    game:GetService("Lighting").FogEnd = 786543
-    game:GetService("Lighting").GlobalShadows = false
-    game:GetService("Lighting").Ambient = Color3.fromRGB(178, 178, 178)
-
-    local LatestValue = true
-    spawn(function()
-        repeat
-            wait()
-        until _G.FullBrightEnabled
-        while wait() do
-            if _G.FullBrightEnabled ~= LatestValue then
-                if not _G.FullBrightEnabled then
-                    game:GetService("Lighting").Brightness = _G.NormalLightingSettings.Brightness
-                    game:GetService("Lighting").ClockTime = _G.NormalLightingSettings.ClockTime
-                    game:GetService("Lighting").FogEnd = _G.NormalLightingSettings.FogEnd
-                    game:GetService("Lighting").GlobalShadows = _G.NormalLightingSettings.GlobalShadows
-                    game:GetService("Lighting").Ambient = _G.NormalLightingSettings.Ambient
-                else
-                    game:GetService("Lighting").Brightness = 1
-                    game:GetService("Lighting").ClockTime = 12
-                    game:GetService("Lighting").FogEnd = 786543
-                    game:GetService("Lighting").GlobalShadows = false
-                    game:GetService("Lighting").Ambient = Color3.fromRGB(178, 178, 178)
-                end
-                LatestValue = not LatestValue
-            end
-        end
-    end)
-    end
-
-    _G.FullBrightExecuted = value
-    _G.FullBrightEnabled = not _G.FullBrightEnabled
-end)
-
-section1:addButton("Anti-Lag", function()
-    loadstring(game:HttpGet("https://pastebin.com/raw/TrSGjpvm"))()
-end)
-
-section1:addButton("Future Lightning", function()
-    spawn(function()
-        local g = game
-        local w = g.Workspace
-        local l = g.Lighting
-        local t = w.Terrain
-        local sr = Instance.new("SunRaysEffect",l)
-        sr.Intensity = 0.075
-        sr.Spread = 0.01
-        local df = Instance.new("DepthOfFieldEffect",l)
-        df.FarIntensity = 0.01
-        l.GlobalShadows = true
-        l.Brightness = 0.7
-        l.ClockTime = 13.5
-        l.GeographicLatitude = 45
-        l.TimeOfDay = 16
-        sethiddenproperty(l,"Technology",4)
-        sethiddenproperty(l,"ShadowSoftness",1)
-        sethiddenproperty(t,"Decoration",true)
-    end)
-end)
 
 section1:addButton("Reduce CPU Usage", function()
     task.spawn(function()
@@ -801,10 +645,6 @@ section1:addButton("Reduce CPU Usage", function()
     Initialize()
 end)
 
-section1:addSlider("Clock Time", Lightning.ClockTime, 0, 23, function(value)
-    Lightning.ClockTime = value
-end)
-
 local section2 = page:addSection("Keybinds")
 
 section2:addKeybind("Toggle GUI", Enum.KeyCode.B, function(value)
@@ -820,42 +660,7 @@ section2:addToggle("Instant Prompts", nil, function(value)
     end)
 end)
 
-local section3 = page:addSection("Current Place: ".. placeName)
-
-section3:addButton("Place ID: ".. game.PlaceId, function()
-    setclipboard(game.PlaceId)
-end)
-
-section3:addButton("Job ID: ".. game.JobId, function()
-    setclipboard(game.JobId)
-end)
-
-section3:addButton("View Connected Places", function()
-    pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Roiiz/scripts/main/Place%20Viewer"))()
-    end)
-    redarkGui:Notify("Universal Place Viewer","Left click to teleport, right click to copy the Place ID.")
-    CoreGui[Redark].Notification.Decline.Visible = false
-    CoreGui[Redark].Notification.Accept:Destroy()
-    task.wait(5)
-    if CoreGui[Redark].Notification.Text.Text == "Left click to teleport, right click to copy the Place ID." then
-        for _, Value in next, getconnections(CoreGui[Redark].Notification.Decline.MouseButton1Click) do
-            Value:Fire()
-        end
-    end
-end)
-
 local section4 = page:addSection("GUI")
-
-section4:addToggle("FPS/Ping Disabled", nil, function(value)
-    game:GetService("CoreGui")["Redark FPS Ping"].PingAndFpsFrame.Visible = not value
-end)
-
-section4:addSlider("FPS/Ping Position", -510, -580, 500, function(value)
-    local fpspingpos = value
-
-    game:GetService("CoreGui")["Redark FPS Ping"].PingAndFpsFrame.Position =  UDim2.new(0.5, fpspingpos, 0, -29)
-end)
 
 section4:addButton("Restart GUI", function()
     redarkGui:Notify("Restarting GUI...", "Are you sure you want to restart the GUI?", function(accepted)
@@ -885,49 +690,6 @@ section4:addButton("Destroy GUI", function()
         until not v
       end
     end)
-end)
-
-local section5 = page:addSection("Webhook")
-
-section5:addTextbox("URL:", "https://discord.com/api/webhooks/", function(value, focusLost)
-    if focusLost then
-        getgenv().WebhookPlayer = value
-    end
-end)
-
-section5:addToggle("Notify DNA Amount", nil, function(value)
-    getgenv().WebhookNotify = value
-
-    if value then
-        task.spawn(function()
-            while true do
-                if not getgenv().WebhookNotify then break end 
-
-                local playerName = game.Players.LocalPlayer.Name
-
-                local embed1 = {
-                    ['title'] = "Player: "..playerName.. " | " .. " DNA Amount: ".. game.Players.LocalPlayer.PlayerGui.StartGui.Background.DinosaurSelection.DNAImage.CurrentDNA.Text,
-                    ['description'] = tostring(os.date("``%m/%d/%y | %X``")),
-                    ['color'] = 16711680
-                }
-
-                local response = http.request({
-                    Url = getgenv().WebhookPlayer,
-                    Headers = {['Content-Type'] = 'application/json'},
-                    Body = game:GetService("HttpService"):JSONEncode({['embeds'] = {embed1}, ['content'] = ''}),
-                    Method = "POST"
-                })
-
-                task.wait(getgenv().WebhookDelay)
-            end
-        end)
-    end
-end)
-
-section5:addTextbox("Delay (Seconds)", "60", function(value, focusLost)
-    if focusLost then
-        getgenv().WebhookDelay = value
-    end
 end)
 
 local page = redarkGui:addPage("Information", 4871684504)
@@ -973,7 +735,7 @@ UICorner.Parent = floatingButton
 local buttonImage = Instance.new("ImageLabel")
 buttonImage.Name = "RoizHubImage"
 buttonImage.Parent = floatingButton
-buttonImage.Image = "rbxassetid://16944229078" 
+buttonImage.Image = "rbxassetid://7251546775" 
 buttonImage.Size = UDim2.new(1, 0, 1, 0)
 buttonImage.BackgroundTransparency = 1
 
@@ -1023,7 +785,7 @@ spawn(function()
 -- Glow Tween
 local Gui = CoreGui[Redark].Main.Glow
 
-local startColor = Color3.new(0, 0, 0)
+local startColor = Color3.new(255, 255, 0)
 local endColor = Color3.new(0, 0, 0)
 
 local tweenInfo = TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, 0, true)
@@ -1066,7 +828,7 @@ redarkGui:SelectPage(redarkGui.pages[1], true)
     removeGui(name)
     end
     
-    local library = loadstring(game:HttpGet("https://pastebin.com/raw/6mVVnMh8"))()
+    local library = loadstring(game:HttpGet("https://pastebin.com/raw/bCvsCwmL"))()
     local redarkGui = library.new(Redark, 16746423793)
 
     local page = redarkGui:addPage("Blocked", 13793170713)
