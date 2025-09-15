@@ -222,6 +222,8 @@ section1:addToggle("Auto Feed", nil, function(state)
                                         collectFruit(plants, {"Coconut", "Apple"})
                                     elseif traitText:find("Flower") then
                                         collectFruit(plants, {"Crown of Thorns", "Flare Daisy", "Rose"})
+                                    elseif traitText:find("Vegetable") then
+                                        collectFruit(plants, {"Tomato"})
                                     end
                                 end
                             end
