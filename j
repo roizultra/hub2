@@ -669,7 +669,7 @@ section4:addButton("Restart GUI", function()
         redarkGui:Notify("Restarting GUI...", "GUI is being restarted..")
         CoreGui[Redark].Notification.Accept:Destroy()
         CoreGui[Redark].Notification.Decline:Destroy()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Roiiz/scripts/main/Redark"))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/roizultra/hub2/refs/heads/main/j"))()
     end
     end)
 end)
