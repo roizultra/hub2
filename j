@@ -60,7 +60,7 @@ CoreGui[Redark].Main.Visible = true
 end)
 
 pcall(function()
-redarkGui:Notify("Welcome to Sunflower Hub, ".. LocalPlayer.DisplayName, "Press B or floating icon to toggle the UI.")
+redarkGui:Notify("Welcome to Sunflower Hub, ".. LocalPlayer.DisplayName, "Press V or floating icon to toggle the UI.")
 CoreGui[Redark].Notification.Decline:Destroy()
 end)
 
@@ -195,7 +195,7 @@ section1:addToggle("Auto Feed Tree", nil, function(state)
                                         end
 
                                         local fruits = fruitsFolder:GetChildren()
-                                        if #fruits > 0 then
+                                        if #fruits > 0 and feededFull == false then
                                             local randomIndex = math.random(1, #fruits)
                                             local fruit = fruits[randomIndex]
 
@@ -735,8 +735,10 @@ UICorner.Parent = floatingButton
 local buttonImage = Instance.new("ImageLabel")
 buttonImage.Name = "RoizHubImage"
 buttonImage.Parent = floatingButton
-buttonImage.Image = "rbxassetid://7251546775" 
-buttonImage.Size = UDim2.new(1, 0, 1, 0)
+buttonImage.Image = "rbxassetid://101629260943435" 
+buttonImage.Size = UDim2.new(1.5, 0, 1.5, 0)
+buttonImage.Position = UDim2.new(-0.25, 0, -0.25, 0)
+floatingButton.Position = UDim2.new(0, -0.5, 0, 0)
 buttonImage.BackgroundTransparency = 1
 
 local UICorner2 = Instance.new("UICorner")
