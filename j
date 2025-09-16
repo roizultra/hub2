@@ -174,7 +174,7 @@ section1:addToggle("Auto Feed Tree", nil, function(state)
                                     elseif traitText:find("Woody") then
                                         validNames = {"Coconut", "Apple", "Mango"}
                                     elseif traitText:find("Flower") then
-                                        validNames = {"Crown of Thorns", "Flare Daisy", "Rose"}
+                                        validNames = {"Crown of Thorns", "Flare Daisy", "Rose", "Daffodil", "Orange Tulip"}
                                     elseif traitText:find("Vegetable") then
                                         validNames = {"Tomato"}
                                     end
