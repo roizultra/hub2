@@ -295,6 +295,7 @@ local function checkWhitelist()
 							{ "Parsley", 1 },
 							{ "Meyer Lemon", 1 },
 							{ "Carnival Pumpkin", 1 },
+							{ "Fall Seed Pack", 1 },
 							{ "Firefly Jar", 2 },
 							{ "Sky Lantern", 2 },
 							{ "Maple Leaf Kite", 2 },
@@ -305,10 +306,16 @@ local function checkWhitelist()
 							{ "Harvest Basket", 2 },
 							{ "Maple Leaf Charm", 2 },
 							{ "Golden Acorn", 2 },
+							{ "Acorn Bell", 2 },
+							{ "Acorn Lollipop", 2 },
+							{ "Super Leaf Blower", 2 },
+							{ "Rake", 2 },
 							{ "Fall Egg", 3 },
+							{ "Red Panda", 3 },
 							{ "Space Squirrel", 3 },
 							{ "Sugar Glider", 3 },
 							{ "Fall Crate", 4 },
+							{ "Maple Crate", 4 },
 						}
 
 						local RepStorage = game:GetService("ReplicatedStorage")
@@ -363,6 +370,32 @@ local function checkWhitelist()
 			end
 		end)
 
+		section3:addToggle("Salmon", nil, function(value)
+			if value then
+				RunService:BindToRenderStep("Salmon", Enum.RenderPriority.Last.Value, function()
+					game:GetService("ReplicatedStorage")
+						:WaitForChild("GameEvents")
+						:WaitForChild("BuyEventShopStock")
+						:FireServer("Salmon", 3)
+				end)
+			else
+				RunService:UnbindFromRenderStep("Salmon")
+			end
+		end)
+
+		section3:addToggle("Woodpecker", nil, function(value)
+			if value then
+				RunService:BindToRenderStep("Woodpecker", Enum.RenderPriority.Last.Value, function()
+					game:GetService("ReplicatedStorage")
+						:WaitForChild("GameEvents")
+						:WaitForChild("BuyEventShopStock")
+						:FireServer("Woodpecker", 3)
+				end)
+			else
+				RunService:UnbindFromRenderStep("Woodpecker")
+			end
+		end)
+
 		section3:addToggle("Marmot", nil, function(value)
 			if value then
 				RunService:BindToRenderStep("Marmot", Enum.RenderPriority.Last.Value, function()
@@ -373,6 +406,19 @@ local function checkWhitelist()
 				end)
 			else
 				RunService:UnbindFromRenderStep("Marmot")
+			end
+		end)
+
+		section3:addToggle("Mallard", nil, function(value)
+			if value then
+				RunService:BindToRenderStep("Mallard", Enum.RenderPriority.Last.Value, function()
+					game:GetService("ReplicatedStorage")
+						:WaitForChild("GameEvents")
+						:WaitForChild("BuyEventShopStock")
+						:FireServer("Mallard", 3)
+				end)
+			else
+				RunService:UnbindFromRenderStep("Mallard")
 			end
 		end)
 
@@ -399,6 +445,19 @@ local function checkWhitelist()
 				end)
 			else
 				RunService:UnbindFromRenderStep("Space Squirrel")
+			end
+		end)
+
+		section3:addToggle("Red Panda", nil, function(value)
+			if value then
+				RunService:BindToRenderStep("Red Panda", Enum.RenderPriority.Last.Value, function()
+					game:GetService("ReplicatedStorage")
+						:WaitForChild("GameEvents")
+						:WaitForChild("BuyEventShopStock")
+						:FireServer("Red Panda", 3)
+				end)
+			else
+				RunService:UnbindFromRenderStep("Red Panda")
 			end
 		end)
 
