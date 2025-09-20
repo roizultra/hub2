@@ -185,7 +185,7 @@ local function checkWhitelist()
 			if state then
 				task.spawn(function()
 					while autoFeedActive do
-						local platform = workspace.Interaction.UpdateItems["Fall Festival"].FallPlatform.MrOakaly
+						local platform = workspace["Fall Festival"].FallPlatform.MrOakaly
 						local progressText = platform.ProgressPart.ProgressBilboard.UpgradeBar.ProgressionLabel.Text
 						local traitText = platform.BubblePart.FallMarketBillboard.BG.TraitTextLabel.Text
 
