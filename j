@@ -314,27 +314,36 @@ local function checkWhitelist()
 								local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 								char.HumanoidRootPart.CFrame = CFrame.new(60, 3, -78)
 
-								if plants and not hasSeeds() then
-									equipWater()
+								if plants then
 									local validNames = eventplants
+									local foundPlant = false
 
 									for _, plant in ipairs(plants:GetChildren()) do
-										if not table.find(validNames, plant.Name) or not plant:IsA("Model") then
-											continue
+										if table.find(validNames, plant.Name) and plant:IsA("Model") then
+											foundPlant = true
+											break
 										end
+									end
 
-										ReplicatedStorage:WaitForChild("GameEvents")
-											:WaitForChild("Crops")
-											:WaitForChild("Collect")
-											:FireServer({ plant })
+									if foundPlant then
+										equipWater()
 
-										equipPlant()
+										for _, plant in ipairs(plants:GetChildren()) do
+											if table.find(validNames, plant.Name) and plant:IsA("Model") then
+												ReplicatedStorage:WaitForChild("GameEvents")
+													:WaitForChild("Crops")
+													:WaitForChild("Collect")
+													:FireServer({ plant })
 
-										local args = { "Held" }
-										ReplicatedStorage:WaitForChild("GameEvents")
-											:WaitForChild("TieredPlants")
-											:WaitForChild("Submit")
-											:FireServer(unpack(args))
+												equipPlant()
+
+												local args = { "Held" }
+												ReplicatedStorage:WaitForChild("GameEvents")
+													:WaitForChild("TieredPlants")
+													:WaitForChild("Submit")
+													:FireServer(unpack(args))
+											end
+										end
 									end
 								end
 							end
