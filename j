@@ -96,6 +96,7 @@ local function checkWhitelist()
 			"Giant Pinecone",
 			"Carrot",
 			"Corn",
+			"Crimson Thorn",
 		}
 
 		local gears = {
@@ -118,7 +119,8 @@ local function checkWhitelist()
 			"Levelup Lollipop",
 		}
 
-		local eggs = { "Common Egg", "Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythical Egg", "Bug Egg" }
+		local eggs =
+			{ "Common Egg", "Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythical Egg", "Bug Egg", "Jungle Egg" }
 
 		-- Local
 		local page = redarkGui:addPage("Inventory", 11330204834)
@@ -170,115 +172,178 @@ local function checkWhitelist()
 				end)
 			end
 		end)
+		local autoEvolveActive = false
+		local Players = game:GetService("Players")
+		local ReplicatedStorage = game:GetService("ReplicatedStorage")
+		local LocalPlayer = Players.LocalPlayer
 
-		local autoFeedActive = false
-		local feededFull = false
-		local lastTraitText = nil
+		local eventplants = {
+			"Evo Mushroom III",
+			"Evo Mushroom II",
+			"Evo Mushroom I",
+			"Evo Blueberry III",
+			"Evo Blueberry II",
+			"Evo Blueberry I",
+			"Evo Beetroot III",
+			"Evo Beetroot II",
+			"Evo Beetroot I",
+			"Evo Pumpkin III",
+			"Evo Pumpkin II",
+			"Evo Pumpkin I",
+		}
+
+		local function PlantAll()
+			local positions = {
+				Vector3.new(59.18401336669922, 0.1355276107788086, -82.62294006347656),
+			}
+
+			for _, pos in ipairs(positions) do
+				for _, plant in ipairs(eventplants) do
+					local args = { pos, plant }
+					ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("Plant_RE"):FireServer(unpack(args))
+					task.wait(0.05)
+				end
+			end
+		end
+
+		local function equipSeed()
+			local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+			local backpack = LocalPlayer:WaitForChild("Backpack")
+
+			local function equipFrom(container)
+				for _, tool in ipairs(container:GetChildren()) do
+					if tool:IsA("Tool") and not tool.Name:find("IV") then
+						for _, plant in ipairs(eventplants) do
+							if tool.Name:lower():find("seed") and tool.Name:find(plant) then
+								char.Humanoid:EquipTool(tool)
+								return
+							end
+						end
+					end
+				end
+			end
+
+			equipFrom(char)
+			equipFrom(backpack)
+		end
+
+		local function equipPlant()
+			local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+			local backpack = LocalPlayer:WaitForChild("Backpack")
+
+			local function equipFrom(container)
+				for _, tool in ipairs(container:GetChildren()) do
+					if tool:IsA("Tool") and not tool.Name:find("IV") then
+						for _, plant in ipairs(eventplants) do
+							if tool.Name:lower():find("kg") and tool.Name:find(plant) then
+								char.Humanoid:EquipTool(tool)
+								return
+							end
+						end
+					end
+				end
+			end
+
+			equipFrom(char)
+			equipFrom(backpack)
+		end
+
+		local function equipWater()
+			local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+			local backpack = LocalPlayer:WaitForChild("Backpack")
+
+			local function equipFrom(container)
+				for _, tool in ipairs(container:GetChildren()) do
+					if tool:IsA("Tool") and tool.Name:match("^Watering Can") then
+						char.Humanoid:EquipTool(tool)
+						task.wait(1.5)
+						local args = { Vector3.new(58.81871032714844, 0.1355266571044922, -82.54676055908203) }
+						game:GetService("ReplicatedStorage")
+							:WaitForChild("GameEvents")
+							:WaitForChild("Water_RE")
+							:FireServer(unpack(args))
+					end
+				end
+			end
+
+			equipFrom(char)
+			equipFrom(backpack)
+		end
+
+		-- Check if backpack has seeds
+		local function hasSeeds()
+			local backpack = LocalPlayer:WaitForChild("Backpack")
+			for _, tool in ipairs(backpack:GetChildren()) do
+				if tool:IsA("Tool") and not tool.Name:find("IV") then
+					for _, plant in ipairs(eventplants) do
+						if tool.Name:lower():find("seed") and tool.Name:find(plant) then
+							return true
+						end
+					end
+				end
+			end
+			return false
+		end
 
 		-- Misc
 		local page = redarkGui:addPage("Event", 12778274392)
-
 		local section1 = page:addSection("")
 
-		section1:addToggle("Auto Feed Tree", nil, function(state)
-			autoFeedActive = state
+		section1:addToggle("Auto Evolve", nil, function(state)
+			autoEvolveActive = state
 			if state then
 				task.spawn(function()
-					while autoFeedActive do
-						local platform = workspace["Fall Festival"].FallPlatform.MrOakaly
-						local progressText = platform.ProgressPart.ProgressBilboard.UpgradeBar.ProgressionLabel.Text
-						local traitText = platform.BubblePart.FallMarketBillboard.BG.TraitTextLabel.Text
+					while autoEvolveActive do
+						for _, farms in ipairs(workspace.Farm:GetDescendants()) do
+							if
+								farms:IsA("StringValue")
+								and farms.Name == "Owner"
+								and farms.Value == LocalPlayer.Name
+							then
+								local important = farms.Parent.Parent
+								local plants = important:FindFirstChild("Plants_Physical")
 
-						if progressText ~= "500/500" and not progressText:find("Cooldown") then
-							feededFull = false
-							for _, farms in ipairs(workspace.Farm:GetDescendants()) do
-								if
-									farms:IsA("StringValue")
-									and farms.Name == "Owner"
-									and farms.Value == LocalPlayer.Name
-								then
-									local important = farms.Parent.Parent
-									local plants = important:FindFirstChild("Plants_Physical")
+								-- Loop PlantAll and equipSeed while seeds exist
+								while hasSeeds() do
+									equipSeed()
+									task.wait(0.1)
+									PlantAll()
+									task.wait(0.5)
+								end
 
-									if plants then
-										if traitText ~= lastTraitText and not pendingSell then
-											LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(87, 3, 0)
-											task.wait(2)
-											ReplicatedStorage.GameEvents.Sell_Inventory:FireServer()
-											lastTraitText = traitText
+								local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+								char.HumanoidRootPart.CFrame = CFrame.new(60, 3, -78)
+
+								if plants and not hasSeeds() then
+									equipWater()
+									local validNames = eventplants
+
+									for _, plant in ipairs(plants:GetChildren()) do
+										if not table.find(validNames, plant.Name) or not plant:IsA("Model") then
+											continue
 										end
 
-										if not feededFull then
-											local validNames = {}
+										ReplicatedStorage:WaitForChild("GameEvents")
+											:WaitForChild("Crops")
+											:WaitForChild("Collect")
+											:FireServer({ plant })
 
-											if traitText:find("Tropical") then
-												validNames = { "Coconut", "Mango", "Dragon Fruit" }
-											elseif traitText:find("Berry") then
-												validNames = { "Strawberry", "Blueberry", "Sunbulb" }
-											elseif traitText:find("Fruit") then
-												validNames = { "Apple", "Coconut", "Mango", "Strawberry", "Blueberry" }
-											elseif traitText:find("Prickly") then
-												validNames =
-													{ "Glowthorn", "Dragon Fruit", "Cactus", "Crown of Thorns" }
-											elseif traitText:find("Woody") then
-												validNames = { "Coconut", "Apple", "Mango" }
-											elseif traitText:find("Flower") then
-												validNames = {
-													"Crown of Thorns",
-													"Flare Daisy",
-													"Rose",
-													"Daffodil",
-													"Orange Tulip",
-												}
-											elseif traitText:find("Vegetable") then
-												validNames = { "Tomato" }
-											end
+										equipPlant()
 
-											for _, plant in ipairs(plants:GetChildren()) do
-												if not table.find(validNames, plant.Name) or not plant:IsA("Model") then
-													continue
-												end
-
-												local prompt = plant:FindFirstChildWhichIsA("ProximityPrompt", true)
-												if not prompt or not autoFeedActive then
-													continue
-												end
-
-												local fruitsFolder = plant:FindFirstChild("Fruits")
-												if not fruitsFolder then
-													continue
-												end
-
-												local fruits = fruitsFolder:GetChildren()
-												if #fruits > 0 and feededFull == false then
-													local randomIndex = math.random(1, #fruits)
-													local fruit = fruits[randomIndex]
-
-													game:GetService("ReplicatedStorage")
-														:WaitForChild("GameEvents")
-														:WaitForChild("Crops")
-														:WaitForChild("Collect")
-														:FireServer({ fruit })
-													game:GetService("ReplicatedStorage")
-														:WaitForChild("GameEvents")
-														:WaitForChild("FallMarketEvent")
-														:WaitForChild("SubmitAllPlants")
-														:FireServer()
-													task.wait(0.02)
-												end
-											end
-										end
+										local args = { "Held" }
+										ReplicatedStorage:WaitForChild("GameEvents")
+											:WaitForChild("TieredPlants")
+											:WaitForChild("Submit")
+											:FireServer(unpack(args))
 									end
 								end
 							end
-						else
-							feededFull = true
 						end
-						task.wait(0.02)
+						task.wait(0.5)
 					end
 				end)
 			else
-				autoFeedActive = false
+				autoEvolveActive = false
 			end
 		end)
 
@@ -288,34 +353,10 @@ local function checkWhitelist()
 					while state do
 						task.wait(0.3) -- main loop delay
 						local shopItems = {
-							{ "Maple Resin", 1 },
-							{ "Golden Peach", 1 },
-							{ "Kniphofia", 1 },
-							{ "Turnip", 1 },
-							{ "Parsley", 1 },
-							{ "Meyer Lemon", 1 },
-							{ "Carnival Pumpkin", 1 },
-							{ "Fall Seed Pack", 1 },
-							{ "Firefly Jar", 2 },
-							{ "Sky Lantern", 2 },
-							{ "Maple Leaf Kite", 2 },
-							{ "Leaf Blower", 2 },
-							{ "Maple Syrup", 2 },
-							{ "Maple Sprinkler", 2 },
-							{ "Bonfire", 2 },
-							{ "Harvest Basket", 2 },
-							{ "Maple Leaf Charm", 2 },
-							{ "Golden Acorn", 2 },
-							{ "Acorn Bell", 2 },
-							{ "Acorn Lollipop", 2 },
-							{ "Super Leaf Blower", 2 },
-							{ "Rake", 2 },
-							{ "Fall Egg", 3 },
-							{ "Red Panda", 3 },
-							{ "Space Squirrel", 3 },
-							{ "Sugar Glider", 3 },
-							{ "Fall Crate", 4 },
-							{ "Maple Crate", 4 },
+							{ "Evo Mushroom I", 5 },
+							{ "Evo Beetroot I", 5 },
+							{ "Evo Blueberry I", 5 },
+							{ "Evo Pumpkin I", 5 },
 						}
 
 						local RepStorage = game:GetService("ReplicatedStorage")
@@ -326,391 +367,6 @@ local function checkWhitelist()
 						end
 					end
 				end)
-			end
-		end)
-
-		local section3 = page:addSection("Pets")
-
-		section3:addToggle("Fall Egg", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Fall Egg", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Fall Egg", 3)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Fall Egg")
-			end
-		end)
-
-		section3:addToggle("Chipmunk", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Chipmunk", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Chipmunk", 3)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Chipmunk")
-			end
-		end)
-
-		section3:addToggle("Red Squirrel", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Red Squirrel", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Red Squirrel", 3)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Red Squirrel")
-			end
-		end)
-
-		section3:addToggle("Salmon", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Salmon", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Salmon", 3)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Salmon")
-			end
-		end)
-
-		section3:addToggle("Woodpecker", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Woodpecker", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Woodpecker", 3)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Woodpecker")
-			end
-		end)
-
-		section3:addToggle("Marmot", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Marmot", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Marmot", 3)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Marmot")
-			end
-		end)
-
-		section3:addToggle("Mallard", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Mallard", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Mallard", 3)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Mallard")
-			end
-		end)
-
-		section3:addToggle("Sugar Glider", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Sugar Glider", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Sugar Glider", 3)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Sugar Glider")
-			end
-		end)
-
-		section3:addToggle("Space Squirrel", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Space Squirrel", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Space Squirrel", 3)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Space Squirrel")
-			end
-		end)
-
-		section3:addToggle("Red Panda", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Red Panda", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Red Panda", 3)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Red Panda")
-			end
-		end)
-
-		local section4 = page:addSection("Seeds")
-
-		section4:addToggle("Turnip", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Turnip", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Turnip", 1)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Turnip")
-			end
-		end)
-
-		section4:addToggle("Parsley", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Parsley", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Parsley", 1)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Parsley")
-			end
-		end)
-
-		section4:addToggle("Meyer Lemon", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Meyer Lemon", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Meyer Lemon", 1)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Meyer Lemon")
-			end
-		end)
-
-		section4:addToggle("Carnival Pumpkin", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Carnival Pumpkin", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Carnival Pumpkin", 1)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Carnival Pumpkin")
-			end
-		end)
-
-		section4:addToggle("Kniphofia", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Kniphofia", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Kniphofia", 1)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Kniphofia")
-			end
-		end)
-
-		section4:addToggle("Golden Peach", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Golden Peach", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Golden Peach", 1)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Golden Peach")
-			end
-		end)
-
-		section4:addToggle("Maple Resin", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Maple Resin", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Maple Resin", 1)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Maple Resin")
-			end
-		end)
-
-		local section5 = page:addSection("Gears")
-
-		section5:addToggle("Firefly Jar", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Firefly Jar", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Firefly Jar", 2)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Firefly Jar")
-			end
-		end)
-
-		section5:addToggle("Sky Lantern", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Sky Lantern", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Sky Lantern", 2)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Sky Lantern")
-			end
-		end)
-
-		section5:addToggle("Maple Leaf Kite", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Maple Leaf Kite", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Maple Leaf Kite", 2)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Maple Leaf Kite")
-			end
-		end)
-
-		section5:addToggle("Leaf Blower", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Leaf Blower", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Leaf Blower", 2)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Leaf Blower")
-			end
-		end)
-
-		section5:addToggle("Maple Syrup", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Maple Syrup", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Maple Syrup", 2)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Maple Syrup")
-			end
-		end)
-
-		section5:addToggle("Maple Sprinkler", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Maple Sprinkler", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Maple Sprinkler", 2)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Maple Sprinkler")
-			end
-		end)
-
-		section5:addToggle("Bonfire", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Bonfire", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Bonfire", 2)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Bonfire")
-			end
-		end)
-
-		section5:addToggle("Harvest Basket", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Harvest Basket", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Harvest Basket", 2)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Harvest Basket")
-			end
-		end)
-
-		section5:addToggle("Maple Leaf Charm", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Maple Leaf Charm", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Maple Leaf Charm", 2)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Maple Leaf Charm")
-			end
-		end)
-
-		section5:addToggle("Golden Acorn", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Golden Acorn", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Golden Acorn", 2)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Golden Acorn")
-			end
-		end)
-
-		local section6 = page:addSection("Cosmetics")
-
-		section6:addToggle("Fall Crate", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Fall Crate", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Fall Crate", 4)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Fall Crate")
-			end
-		end)
-
-		section6:addToggle("Fall Fountain", nil, function(value)
-			if value then
-				RunService:BindToRenderStep("Fall Fountain", Enum.RenderPriority.Last.Value, function()
-					game:GetService("ReplicatedStorage")
-						:WaitForChild("GameEvents")
-						:WaitForChild("BuyEventShopStock")
-						:FireServer("Fall Fountain", 4)
-				end)
-			else
-				RunService:UnbindFromRenderStep("Fall Fountain")
 			end
 		end)
 
