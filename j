@@ -173,6 +173,7 @@ local function checkWhitelist()
 			end
 		end)
 		local autoEvolveActive = false
+		local autoBattlepass = false
 		local Players = game:GetService("Players")
 		local ReplicatedStorage = game:GetService("ReplicatedStorage")
 		local LocalPlayer = Players.LocalPlayer
@@ -376,6 +377,97 @@ local function checkWhitelist()
 						end
 					end
 				end)
+			end
+		end)
+
+		section1:addToggle("Auto Battlepass", nil, function(state)
+			autoBattlepass = state
+			if state then
+				task.spawn(function()
+					while autoBattlepass do
+						for _, farms in ipairs(workspace.Farm:GetDescendants()) do
+							if
+								farms:IsA("StringValue")
+								and farms.Name == "Owner"
+								and farms.Value == LocalPlayer.Name
+							then
+								local important = farms.Parent.Parent
+								local plants = important:FindFirstChild("Plants_Physical")
+
+								local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+								local backpack = LocalPlayer:WaitForChild("Backpack")
+
+								local function equipFrom(container)
+									for _, tool in ipairs(container:GetChildren()) do
+										if tool:IsA("Tool") and not tool.Name:find("IV") then
+											for _, plant in ipairs(seeds) do
+												if tool.Name:lower():find("seed") and tool.Name:find(plant) then
+													char.Humanoid:EquipTool(tool)
+													return
+												end
+											end
+										end
+									end
+								end
+
+								equipFrom(char)
+								equipFrom(backpack)
+
+								local positions = {
+									Vector3.new(59.18401336669922, 0.1355276107788086, -82.62294006347656),
+								}
+
+								for _, pos in ipairs(positions) do
+									for _, plant in ipairs(seeds) do
+										local args = { pos, plant }
+										ReplicatedStorage:WaitForChild("GameEvents")
+											:WaitForChild("Plant_RE")
+											:FireServer(unpack(args))
+										task.wait(0.05)
+									end
+								end
+
+								for _, plant in ipairs(plants:GetChildren()) do
+									if not table.find(seeds, plant.Name) or not plant:IsA("Model") then
+										continue
+									end
+
+									local prompt = plant:FindFirstChildWhichIsA("ProximityPrompt", true)
+									if not prompt then
+										continue
+									end
+
+									local fruitsFolder = plant:FindFirstChild("Fruits")
+									if not fruitsFolder then
+										continue
+									end
+
+									for _, fruit in ipairs(fruitsFolder:GetChildren()) do
+										if fruit:IsA("Model") then
+											game:GetService("ReplicatedStorage")
+												:WaitForChild("GameEvents")
+												:WaitForChild("Crops")
+												:WaitForChild("Collect")
+												:FireServer({ fruit })
+											task.wait(0.02)
+										end
+									end
+								end
+
+								local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+								char.HumanoidRootPart.CFrame = CFrame.new(87, 3, 0)
+								task.wait(0.5)
+								game:GetService("ReplicatedStorage")
+									:WaitForChild("GameEvents")
+									:WaitForChild("Sell_Inventory")
+									:FireServer()
+							end
+						end
+						task.wait(0.1)
+					end
+				end)
+			else
+				autoBattlepass = false
 			end
 		end)
 
