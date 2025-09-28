@@ -193,39 +193,48 @@ local function checkWhitelist()
 			"Evo Pumpkin I",
 		}
 
-		local function PlantAll()
+		local function PlantLoop()
+			local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+			local backpack = LocalPlayer:WaitForChild("Backpack")
 			local positions = {
 				Vector3.new(59.18401336669922, 0.1355276107788086, -82.62294006347656),
 			}
 
-			for _, pos in ipairs(positions) do
-				for _, plant in ipairs(eventplants) do
-					local args = { pos, plant }
-					ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("Plant_RE"):FireServer(unpack(args))
-					task.wait(0.05)
-				end
-			end
-		end
+			while true do
+				local foundSeed = false
 
-		local function equipSeed()
-			local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-			local backpack = LocalPlayer:WaitForChild("Backpack")
-
-			local function equipFrom(container)
-				for _, tool in ipairs(container:GetChildren()) do
-					if tool:IsA("Tool") and not tool.Name:find("IV") then
-						for _, plant in ipairs(eventplants) do
-							if tool.Name:lower():find("seed") and tool.Name:find(plant) then
-								char.Humanoid:EquipTool(tool)
-								return
+				-- Try to equip a valid seed
+				local function equipFrom(container)
+					for _, tool in ipairs(container:GetChildren()) do
+						if tool:IsA("Tool") and not tool.Name:find("IV") then
+							for _, plant in ipairs(eventplants) do
+								if tool.Name:lower():find("seed") and tool.Name:find(plant) then
+									char.Humanoid:EquipTool(tool)
+									foundSeed = true
+									return
+								end
 							end
 						end
 					end
 				end
-			end
 
-			equipFrom(char)
-			equipFrom(backpack)
+				equipFrom(char)
+				equipFrom(backpack)
+
+				-- If no seed found, stop looping
+				if not foundSeed then
+					break
+				end
+
+				-- Plant all equipped seeds at positions
+				for _, pos in ipairs(positions) do
+					for _, plant in ipairs(eventplants) do
+						local args = { pos, plant }
+						ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("Plant_RE"):FireServer(unpack(args))
+						task.wait()
+					end
+				end
+			end
 		end
 
 		local function equipPlant()
@@ -257,7 +266,7 @@ local function checkWhitelist()
 				for _, tool in ipairs(container:GetChildren()) do
 					if tool:IsA("Tool") and tool.Name:match("^Watering Can") then
 						char.Humanoid:EquipTool(tool)
-						task.wait(1.5)
+						task.wait(2)
 						local args = { Vector3.new(58.81871032714844, 0.1355266571044922, -82.54676055908203) }
 						game:GetService("ReplicatedStorage")
 							:WaitForChild("GameEvents")
@@ -269,21 +278,6 @@ local function checkWhitelist()
 
 			equipFrom(char)
 			equipFrom(backpack)
-		end
-
-		-- Check if backpack has seeds
-		local function hasSeeds()
-			local backpack = LocalPlayer:WaitForChild("Backpack")
-			for _, tool in ipairs(backpack:GetChildren()) do
-				if tool:IsA("Tool") and not tool.Name:find("IV") then
-					for _, plant in ipairs(eventplants) do
-						if tool.Name:lower():find("seed") and tool.Name:find(plant) then
-							return true
-						end
-					end
-				end
-			end
-			return false
 		end
 
 		-- Misc
@@ -327,14 +321,6 @@ local function checkWhitelist()
 								local important = farms.Parent.Parent
 								local plants = important:FindFirstChild("Plants_Physical")
 
-								-- Loop PlantAll and equipSeed while seeds exist
-								while hasSeeds() do
-									equipSeed()
-									task.wait(0.1)
-									PlantAll()
-									task.wait(0.5)
-								end
-
 								local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 								char.HumanoidRootPart.CFrame = CFrame.new(60, 3, -78)
 
@@ -354,25 +340,43 @@ local function checkWhitelist()
 
 										for _, plant in ipairs(plants:GetChildren()) do
 											if table.find(validNames, plant.Name) and plant:IsA("Model") then
-												ReplicatedStorage:WaitForChild("GameEvents")
-													:WaitForChild("Crops")
-													:WaitForChild("Collect")
-													:FireServer({ plant })
+												hasPlant = true
 
-												equipPlant()
+												while hasPlant do
+													if not hasPlant then
+														break
+													end
+													task.wait(0.01)
 
-												local args = { "Held" }
-												ReplicatedStorage:WaitForChild("GameEvents")
-													:WaitForChild("TieredPlants")
-													:WaitForChild("Submit")
-													:FireServer(unpack(args))
+													ReplicatedStorage:WaitForChild("GameEvents")
+														:WaitForChild("Crops")
+														:WaitForChild("Collect")
+														:FireServer({ plant })
+
+													equipPlant()
+
+													ReplicatedStorage:WaitForChild("GameEvents")
+														:WaitForChild("TieredPlants")
+														:WaitForChild("Submit")
+														:FireServer("Held")
+
+													for _, plant in ipairs(plants:GetChildren()) do
+														if
+															table.find(validNames, plant.Name) and plant:IsA("Model")
+														then
+															hasPlant = false
+														end
+													end
+												end
 											end
 										end
 									end
+
+									PlantLoop()
 								end
 							end
 						end
-						task.wait(0.5)
+						task.wait()
 					end
 				end)
 			else
