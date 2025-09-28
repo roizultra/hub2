@@ -290,6 +290,29 @@ local function checkWhitelist()
 		local page = redarkGui:addPage("Event", 12778274392)
 		local section1 = page:addSection("")
 
+		local battlePassSeeds = {
+			"Strawberry",
+			"Blueberry",
+			"Cactus",
+			"Tomato",
+			"Apple",
+			"Coconut",
+			"Dragon Fruit",
+			"Mango",
+			"Grape",
+			"Pepper",
+			"Cacao",
+			"Beanstalk",
+			"Ember Lily",
+			"Sugar Apple",
+			"Burning Bud",
+			"Romanesco",
+			"Elder Strawberry",
+			"Giant Pinecone",
+			"Corn",
+			"Crimson Thorn",
+		}
+
 		section1:addToggle("Auto Evolve", nil, function(state)
 			autoEvolveActive = state
 			if state then
@@ -385,6 +408,45 @@ local function checkWhitelist()
 			if state then
 				task.spawn(function()
 					while autoBattlepass do
+						local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+						char.HumanoidRootPart.CFrame = CFrame.new(87, 3, 0)
+						game:GetService("ReplicatedStorage")
+							:WaitForChild("GameEvents")
+							:WaitForChild("Sell_Inventory")
+							:FireServer()
+						task.wait(5)
+					end
+				end)
+
+				task.spawn(function()
+					while autoBattlepass do
+						local positions = {
+							Vector3.new(59.18401336669922, 0.1355276107788086, -82.62294006347656),
+						}
+
+						for _, pos in ipairs(positions) do
+							for _, plant in ipairs(battlePassSeeds) do
+								local args = { pos, plant }
+								ReplicatedStorage:WaitForChild("GameEvents")
+									:WaitForChild("Plant_RE")
+									:FireServer(unpack(args))
+								task.wait()
+							end
+						end
+					end
+				end)
+
+				local isCollectingFruit = false
+				local collectedQueue = {}
+
+				local function collectFruitsStep()
+					if not autoBattlepass then
+						RunService:UnbindFromRenderStep("AutoBattlepassFruits")
+						return
+					end
+
+					-- Populate queue if empty
+					if #collectedQueue == 0 then
 						for _, farms in ipairs(workspace.Farm:GetDescendants()) do
 							if
 								farms:IsA("StringValue")
@@ -396,29 +458,6 @@ local function checkWhitelist()
 
 								local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 								local backpack = LocalPlayer:WaitForChild("Backpack")
-
-								local battlePassSeeds = {
-									"Strawberry",
-									"Blueberry",
-									"Cactus",
-									"Tomato",
-									"Apple",
-									"Coconut",
-									"Dragon Fruit",
-									"Mango",
-									"Grape",
-									"Pepper",
-									"Cacao",
-									"Beanstalk",
-									"Ember Lily",
-									"Sugar Apple",
-									"Burning Bud",
-									"Romanesco",
-									"Elder Strawberry",
-									"Giant Pinecone",
-									"Corn",
-									"Crimson Thorn",
-								}
 
 								local function equipFrom(container)
 									for _, tool in ipairs(container:GetChildren()) do
@@ -443,69 +482,41 @@ local function checkWhitelist()
 								equipFrom(char)
 								equipFrom(backpack)
 
-								task.spawn(function()
-									while autoBattlepass do
-										local positions = {
-											Vector3.new(59.18401336669922, 0.1355276107788086, -82.62294006347656),
-										}
-
-										for _, pos in ipairs(positions) do
-											for _, plant in ipairs(battlePassSeeds) do
-												local args = { pos, plant }
-												ReplicatedStorage:WaitForChild("GameEvents")
-													:WaitForChild("Plant_RE")
-													:FireServer(unpack(args))
-												task.wait(0.05)
-											end
-										end
-									end
-								end)
-
 								for _, plant in ipairs(plants:GetChildren()) do
 									if not table.find(battlePassSeeds, plant.Name) or not plant:IsA("Model") then
 										continue
 									end
 
-									local prompt = plant:FindFirstChildWhichIsA("ProximityPrompt", true)
-									if not prompt then
-										continue
-									end
-
 									local fruitsFolder = plant:FindFirstChild("Fruits")
-									if not fruitsFolder then
-										continue
-									end
-
-									for _, fruit in ipairs(fruitsFolder:GetChildren()) do
-										if fruit:IsA("Model") then
-											game:GetService("ReplicatedStorage")
-												:WaitForChild("GameEvents")
-												:WaitForChild("Crops")
-												:WaitForChild("Collect")
-												:FireServer({ fruit })
-											task.wait(0.02)
+									if fruitsFolder then
+										for _, fruit in ipairs(fruitsFolder:GetChildren()) do
+											if fruit:IsA("Model") then
+												table.insert(collectedQueue, fruit)
+											end
 										end
 									end
 								end
-
-								task.spawn(function()
-									while autoBattlepass do
-										local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-										char.HumanoidRootPart.CFrame = CFrame.new(87, 3, 0)
-										task.wait(3)
-										game:GetService("ReplicatedStorage")
-											:WaitForChild("GameEvents")
-											:WaitForChild("Sell_Inventory")
-											:FireServer()
-									end
-								end)
 							end
 						end
-						task.wait(0.1)
 					end
-				end)
+
+					-- Process one fruit per frame
+					if not isCollectingFruit and #collectedQueue > 0 then
+						isCollectingFruit = true
+						local fruit = table.remove(collectedQueue, 1)
+						game:GetService("ReplicatedStorage")
+							:WaitForChild("GameEvents")
+							:WaitForChild("Crops")
+							:WaitForChild("Collect")
+							:FireServer({ fruit })
+						isCollectingFruit = false
+					end
+				end
+
+				RunService:BindToRenderStep("AutoBattlepassFruits", Enum.RenderPriority.Input.Value, collectFruitsStep)
 			else
 				autoBattlepass = false
+				RunService:UnbindFromRenderStep("AutoBattlepassFruits")
 			end
 		end)
 
