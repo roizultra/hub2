@@ -403,7 +403,15 @@ local function checkWhitelist()
 			end
 		end)
 
-		section1:addToggle("Auto Battlepass", nil, function(state)
+		local section2 = page:addSection("Battlepass")
+
+		local autoPlant = false
+
+		section2:addToggle("Auto Plant", nil, function(state)
+			autoPlant = state
+		end)
+
+		section2:addToggle("Auto Battlepass", nil, function(state)
 			autoBattlepass = state
 			if state then
 				task.spawn(function()
@@ -414,23 +422,25 @@ local function checkWhitelist()
 							:WaitForChild("GameEvents")
 							:WaitForChild("Sell_Inventory")
 							:FireServer()
-						task.wait(5)
+						task.wait(15)
 					end
 				end)
 
 				task.spawn(function()
 					while autoBattlepass do
-						local positions = {
-							Vector3.new(59.18401336669922, 0.1355276107788086, -82.62294006347656),
-						}
+						task.wait(1)
+						if autoPlant then
+							local positions = {
+								Vector3.new(59.18401336669922, 0.1355276107788086, -82.62294006347656),
+							}
 
-						for _, pos in ipairs(positions) do
-							for _, plant in ipairs(battlePassSeeds) do
-								local args = { pos, plant }
-								ReplicatedStorage:WaitForChild("GameEvents")
-									:WaitForChild("Plant_RE")
-									:FireServer(unpack(args))
-								task.wait()
+							for _, pos in ipairs(positions) do
+								for _, plant in ipairs(battlePassSeeds) do
+									local args = { pos, plant }
+									ReplicatedStorage:WaitForChild("GameEvents")
+										:WaitForChild("Plant_RE")
+										:FireServer(unpack(args))
+								end
 							end
 						end
 					end
@@ -479,8 +489,10 @@ local function checkWhitelist()
 									end
 								end
 
-								equipFrom(char)
-								equipFrom(backpack)
+								if autoPlant then
+									equipFrom(char)
+									equipFrom(backpack)
+								end
 
 								for _, plant in ipairs(plants:GetChildren()) do
 									if not table.find(battlePassSeeds, plant.Name) or not plant:IsA("Model") then
@@ -513,7 +525,7 @@ local function checkWhitelist()
 					end
 				end
 
-				RunService:BindToRenderStep("AutoBattlepassFruits", Enum.RenderPriority.Input.Value, collectFruitsStep)
+				RunService:BindToRenderStep("AutoBattlepassFruits", Enum.RenderPriority.First.Value, collectFruitsStep)
 			else
 				autoBattlepass = false
 				RunService:UnbindFromRenderStep("AutoBattlepassFruits")
