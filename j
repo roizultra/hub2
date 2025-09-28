@@ -397,11 +397,41 @@ local function checkWhitelist()
 								local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 								local backpack = LocalPlayer:WaitForChild("Backpack")
 
+								local battlePassSeeds = {
+									"Strawberry",
+									"Blueberry",
+									"Cactus",
+									"Tomato",
+									"Apple",
+									"Coconut",
+									"Dragon Fruit",
+									"Mango",
+									"Grape",
+									"Pepper",
+									"Cacao",
+									"Beanstalk",
+									"Ember Lily",
+									"Sugar Apple",
+									"Burning Bud",
+									"Romanesco",
+									"Elder Strawberry",
+									"Giant Pinecone",
+									"Corn",
+									"Crimson Thorn",
+								}
+
 								local function equipFrom(container)
 									for _, tool in ipairs(container:GetChildren()) do
-										if tool:IsA("Tool") and not tool.Name:find("IV") then
-											for _, plant in ipairs(seeds) do
-												if tool.Name:lower():find("seed") and tool.Name:find(plant) then
+										if
+											tool:IsA("Tool")
+											and not tool.Name:find("IV")
+											and not tool.Name:lower():find("evo")
+										then
+											for _, plant in ipairs(battlePassSeeds) do
+												if
+													tool.Name:lower():find("seed")
+													and tool.Name:lower():find(plant:lower())
+												then
 													char.Humanoid:EquipTool(tool)
 													return
 												end
@@ -413,22 +443,26 @@ local function checkWhitelist()
 								equipFrom(char)
 								equipFrom(backpack)
 
-								local positions = {
-									Vector3.new(59.18401336669922, 0.1355276107788086, -82.62294006347656),
-								}
+								task.spawn(function()
+									while autoBattlepass do
+										local positions = {
+											Vector3.new(59.18401336669922, 0.1355276107788086, -82.62294006347656),
+										}
 
-								for _, pos in ipairs(positions) do
-									for _, plant in ipairs(seeds) do
-										local args = { pos, plant }
-										ReplicatedStorage:WaitForChild("GameEvents")
-											:WaitForChild("Plant_RE")
-											:FireServer(unpack(args))
-										task.wait(0.05)
+										for _, pos in ipairs(positions) do
+											for _, plant in ipairs(battlePassSeeds) do
+												local args = { pos, plant }
+												ReplicatedStorage:WaitForChild("GameEvents")
+													:WaitForChild("Plant_RE")
+													:FireServer(unpack(args))
+												task.wait(0.05)
+											end
+										end
 									end
-								end
+								end)
 
 								for _, plant in ipairs(plants:GetChildren()) do
-									if not table.find(seeds, plant.Name) or not plant:IsA("Model") then
+									if not table.find(battlePassSeeds, plant.Name) or not plant:IsA("Model") then
 										continue
 									end
 
@@ -454,13 +488,17 @@ local function checkWhitelist()
 									end
 								end
 
-								local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-								char.HumanoidRootPart.CFrame = CFrame.new(87, 3, 0)
-								task.wait(0.5)
-								game:GetService("ReplicatedStorage")
-									:WaitForChild("GameEvents")
-									:WaitForChild("Sell_Inventory")
-									:FireServer()
+								task.spawn(function()
+									while autoBattlepass do
+										local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+										char.HumanoidRootPart.CFrame = CFrame.new(87, 3, 0)
+										task.wait(3)
+										game:GetService("ReplicatedStorage")
+											:WaitForChild("GameEvents")
+											:WaitForChild("Sell_Inventory")
+											:FireServer()
+									end
+								end)
 							end
 						end
 						task.wait(0.1)
