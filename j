@@ -343,9 +343,6 @@ local function checkWhitelist()
 												hasPlant = true
 
 												while hasPlant do
-													if not hasPlant then
-														break
-													end
 													task.wait(0.01)
 
 													ReplicatedStorage:WaitForChild("GameEvents")
