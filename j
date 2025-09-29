@@ -292,7 +292,6 @@ local function checkWhitelist()
 			"Apple",
 			"Coconut",
 			"Dragon Fruit",
-			"Mango",
 			"Grape",
 			"Pepper",
 			"Cacao",
@@ -430,7 +429,7 @@ local function checkWhitelist()
 
 				task.spawn(function()
 					while autoBattlepass do
-						task.wait(1)
+						task.wait()
 						if autoPlant then
 							local positions = {
 								Vector3.new(59.18401336669922, 0.1355276107788086, -82.62294006347656),
@@ -442,6 +441,7 @@ local function checkWhitelist()
 									ReplicatedStorage:WaitForChild("GameEvents")
 										:WaitForChild("Plant_RE")
 										:FireServer(unpack(args))
+									task.wait(0.05)
 								end
 							end
 						end
