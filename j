@@ -305,6 +305,7 @@ local function checkWhitelist()
 			"Giant Pinecone",
 			"Corn",
 			"Crimson Thorn",
+			"Maple Resin",
 		}
 
 		section1:addToggle("Auto Evolve", nil, function(state)
