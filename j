@@ -318,14 +318,7 @@ local function checkWhitelist()
 		end ]]
 
 		local function collectFruits(All, Selected)
-			local collected = 0
-			local limit = 200
-
 			for _, plant in ipairs(LocalPlants:GetChildren()) do
-				if collected >= limit then
-					break
-				end
-
 				local fruitsFolder = plant:FindFirstChild("Fruits")
 				if not fruitsFolder then
 					continue
@@ -339,22 +332,12 @@ local function checkWhitelist()
 				local toCollect = {}
 
 				if All then
-					for _, fruit in ipairs(fruits) do
-						if collected >= limit then
-							break
-						end
-						table.insert(toCollect, fruit)
-						collected += 1
-					end
+					toCollect = fruits
 				elseif Selected and type(Selected) == "table" then
 					for _, fruit in ipairs(fruits) do
-						if collected >= limit then
-							break
-						end
 						for _, name in ipairs(Selected) do
 							if fruit.Name == name then
 								table.insert(toCollect, fruit)
-								collected += 1
 								break
 							end
 						end
