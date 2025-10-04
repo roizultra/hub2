@@ -257,7 +257,7 @@ local function checkWhitelist()
 		local page = SunflowerGui:addPage("Event", 12778274392)
 		local section1 = page:addSection("")
 
-		local function collectEventFruits()
+		--[[ local function collectEventFruits()
 			for _, farms in ipairs(workspace.Farm:GetDescendants()) do
 				if farms:IsA("StringValue") and farms.Name == "Owner" and farms.Value == LocalPlayer.Name then
 					local important = farms.Parent.Parent
@@ -315,10 +315,17 @@ local function checkWhitelist()
 					end
 				end
 			end
-		end
+		end ]]
 
 		local function collectFruits(All, Selected)
+			local collected = 0
+			local limit = 200
+
 			for _, plant in ipairs(LocalPlants:GetChildren()) do
+				if collected >= limit then
+					break
+				end
+
 				local fruitsFolder = plant:FindFirstChild("Fruits")
 				if not fruitsFolder then
 					continue
@@ -332,12 +339,22 @@ local function checkWhitelist()
 				local toCollect = {}
 
 				if All then
-					toCollect = fruits
+					for _, fruit in ipairs(fruits) do
+						if collected >= limit then
+							break
+						end
+						table.insert(toCollect, fruit)
+						collected += 1
+					end
 				elseif Selected and type(Selected) == "table" then
 					for _, fruit in ipairs(fruits) do
+						if collected >= limit then
+							break
+						end
 						for _, name in ipairs(Selected) do
 							if fruit.Name == name then
 								table.insert(toCollect, fruit)
+								collected += 1
 								break
 							end
 						end
@@ -354,23 +371,38 @@ local function checkWhitelist()
 			end
 		end
 
-		local teleportConnection -- move outside
+		local teleportConnection
 
 		section1:addToggle("Auto Event", nil, function(value)
 			getgenv().AutoEvent = value
 
 			if getgenv().AutoEvent then
+				local originCFrame
 				for _, child in ipairs(workspace:GetChildren()) do
 					if child.Name == "Acorn" and child:FindFirstChild("Acorn") then
-						Character.HumanoidRootPart.CFrame = child.Acorn.CFrame
-						task.wait(0.1)
+						originCFrame = Character.HumanoidRootPart.CFrame
+						local owner = tostring(child:GetAttribute("OWNER"))
+						if owner == tostring(LocalPlayer.UserId) then
+							Character.HumanoidRootPart.CFrame = child.Acorn.CFrame
+							task.wait(0.7)
+							Character.HumanoidRootPart.CFrame = originCFrame
+						end
 					end
+				end
+				if originCFrame then
+					Character.HumanoidRootPart.CFrame = originCFrame
 				end
 
 				if not teleportConnection then
 					teleportConnection = workspace.ChildAdded:Connect(function(child)
 						if child.Name == "Acorn" and child:FindFirstChild("Acorn") then
-							Character.HumanoidRootPart.CFrame = child.Acorn.CFrame
+							originCFrame = Character.HumanoidRootPart.CFrame
+							local owner = tostring(child:GetAttribute("OWNER"))
+							if owner == tostring(LocalPlayer.UserId) then
+								Character.HumanoidRootPart.CFrame = child.Acorn.CFrame
+								task.wait(0.7)
+								Character.HumanoidRootPart.CFrame = originCFrame
+							end
 						end
 					end)
 				end
@@ -510,8 +542,6 @@ local function checkWhitelist()
 		end) ]]
 
 		local section2 = page:addSection("Battlepass")
-
-		--game:GetService("Players").LocalPlayer.PlayerGui.Top_Notification.Frame.Notification_UI_Mobile.TextLabel.Text == "Max backpack space! Go sell!"
 
 		section2:addToggle("Auto Plant", nil, function(state) end)
 
